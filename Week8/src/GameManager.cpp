@@ -7,7 +7,14 @@ GameManager::GameManager(
     std::unique_ptr<IRewardRule>  rewardRule)
     : m_scoringRule(std::move(scoringRule)),
       m_blindRule(std::move(blindRule)),
-      m_rewardRule(std::move(rewardRule)) {}
+      m_rewardRule(std::move(rewardRule)) {
+    // Daftarkan JokerMult2x default sebagai observer
+    m_scoreSubject.attach(&m_jokerMult2x);
+}
+
+void GameManager::attachScoreObserver(ScoreObserver* observer) {
+    m_scoreSubject.attach(observer);
+}
 
 void GameManager::runSession(int totalRounds) {
     std::cout << "=== Run Started ===\n";
@@ -40,18 +47,23 @@ void GameManager::runSession(int totalRounds) {
 
         // Step 5: Hitung base score dari kartu yang dipilih
         Hand playedHand = chosenHand.toHand();
-        int score = m_scoringRule->scoreHand(playedHand);
-        std::cout << "[SCORE] base score: " << score << "\n";
+        int baseScore = m_scoringRule->scoreHand(playedHand);
+        std::cout << "[SCORE] base score: " << baseScore << "\n";
 
-        // Step 6: Check win/lose
-        bool win = m_blindRule->checkBlind(score);
+        // Step 6: Observer Notification (JokerMult2x)
+        int finalScore = baseScore;
+        m_scoreSubject.notify(baseScore, finalScore);
+        std::cout << "[SCORE] final score: " << finalScore << "\n";
 
-        // Step 7: Hitung reward
-        int reward = m_rewardRule->earnMoney(win, score);
+        // Step 7: Check win/lose
+        bool win = m_blindRule->checkBlind(finalScore);
+
+        // Step 8: Hitung reward
+        int reward = m_rewardRule->earnMoney(win, finalScore);
         m_totalMoney += reward;
         std::cout << "Money gained: " << reward << " | Total: " << m_totalMoney << "\n";
 
-        // Step 8: Shop
+        // Step 9: Shop
         m_shop.offerItem(round);
     }
 

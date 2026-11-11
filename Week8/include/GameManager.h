@@ -7,9 +7,11 @@
 #include "IBlindRule.h"
 #include "IRewardRule.h"
 #include "ShopSystem.h"
+#include "ScoreSubject.h"
+#include "JokerMult2x.h"
 
 // GameManager: orchestrator utama game loop
-// Alur: Generate Hand → Choose Hand → Play Hand → Score → Blind Check → Reward → Shop
+// Alur: Generate Hand -> Choose Hand -> Play Hand -> Score -> Observer Notification -> Blind Check -> Reward -> Shop
 class GameManager {
 public:
     GameManager(
@@ -18,6 +20,7 @@ public:
         std::unique_ptr<IRewardRule>  rewardRule
     );
 
+    void attachScoreObserver(ScoreObserver* observer);
     void runSession(int totalRounds = 3);
 
 private:
@@ -28,6 +31,9 @@ private:
     std::unique_ptr<IScoringRule> m_scoringRule;
     std::unique_ptr<IBlindRule>   m_blindRule;
     std::unique_ptr<IRewardRule>  m_rewardRule;
+
+    ScoreSubject m_scoreSubject;
+    JokerMult2x  m_jokerMult2x;
 
     int m_totalMoney = 0;
 };
